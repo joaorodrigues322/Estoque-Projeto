@@ -17,4 +17,11 @@ export function ThemedView({ style, lightColor, darkColor, ...otherProps }: Them
 
 /*oi estou testando */
 
+<<<<<<< HEAD
 /*dawjibgdaiuhd augd */
+=======
+/*oi estou testando 2*/
+
+/*oi estou testando 3
+*/
+>>>>>>> 610af4a62ddf8e356249ded8c9b5cd532db69384
