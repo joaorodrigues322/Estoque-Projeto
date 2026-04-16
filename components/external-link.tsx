@@ -23,3 +23,5 @@ export function ExternalLink({ href, ...rest }: Props) {
     />
   );
 }
+
+/*Teste 48912 */
