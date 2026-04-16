@@ -18,3 +18,6 @@ export function ThemedView({ style, lightColor, darkColor, ...otherProps }: Them
 /*oi estou testando */
 
 /*oi estou testando 2*/
+
+/*oi estou testando 3
+*/
