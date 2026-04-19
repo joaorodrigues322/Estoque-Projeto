@@ -1,0 +1,2305 @@
+/*Pasta Model*/
+
+export class Ofertas {
+    public idProduto: string;
+    public nomeProduto: string;
+    public descricaoProduto: string;
+    public precoAtual: number; // Alterado para tipo number
+    public precoOferta: number; // Alterado para tipo number
+    public id: string;
+    
+    constructor(obj?: Partial<Ofertas>) {
+        if (obj) {
+            this.idProduto = obj.idProduto || "";
+            this.nomeProduto = obj.nomeProduto || "";
+            this.descricaoProduto = obj.descricaoProduto || "";
+            this.precoAtual = obj.precoAtual || 0; // Definido valor padrão como 0 se não for fornecido
+            this.precoOferta = obj.precoOferta || 0; // Definido valor padrão como 0 se não for fornecido
+            this.id = obj.id || "";
+         }
+    }
+
+    toFirestore() {
+        const oferta = {
+            idProduto: this.idProduto,
+            nomeProduto: this.nomeProduto,
+            descricaoProduto: this.descricaoProduto,
+            precoAtual: this.precoAtual,
+            precoOferta: this.precoOferta,
+        };
+        return oferta;
+    }
+
+    toString() {
+        const objeto = `{
+            "idProduto": "${this.idProduto}",
+            "nomeProduto": "${this.nomeProduto}",
+            "descricaoProduto": "${this.descricaoProduto}",
+            "precoAtual": ${this.precoAtual}, // Não usar aspas para números
+            "precoOferta": ${this.precoOferta}, // Não usar aspas para números
+        }`;
+        return objeto;
+    }
+}
+/*---*/
+export class Produtos {
+    public id : string;
+    public nome : string;
+    public peso: string;
+    public quantidade: number;
+    public descricao : string;
+    public datadeentrada: string;
+    public tipo: string;
+  emFalta: boolean;
+    
+    constructor(obj?: Partial<Produtos>) {
+        if (obj) {
+            this.id = obj.id
+            this.nome = obj.nome
+            this.peso = obj.peso
+            this.quantidade = obj.quantidade
+            this.descricao = obj.descricao
+            this.datadeentrada = obj.datadeentrada
+            this.tipo = obj.tipo
+         }
+    }
+
+    toFirestore() {
+        const Produto =  {
+                    id : this.id,
+                    nome : this.nome,
+                    peso : this.peso,
+                    quantidade : this.quantidade,
+                    descricao : this.descricao,
+                    datadeentrada : this.datadeentrada,
+                    tipo : this.tipo         
+         }
+         return Produto
+    }
+
+   
+    toString() {
+        const Objeto = `{
+            "id": "${this.id}",
+            "nome": "${this.nome}",
+            "peso": "${this.peso}",
+            "quantidade": "${this.quantidade}",
+            "descricao": "${this.descricao}",
+            "datadeentrada": "${this.datadeentrada}",
+            "tipo": "${this.tipo}" 
+        }`
+        return Objeto
+    }
+};
+/*---*/
+
+export class Usuario{
+    public id: string;
+    public nome: string;
+    public email: string;
+    public senha: string;
+    public datanascimento: string;
+    public cargo: string;
+    
+
+    constructor(obj?: Partial<Usuario>){
+        if (obj){
+            this.id=obj.id
+            this.nome=obj.nome
+            this.email=obj.email
+            this.senha=obj.senha
+            this.datanascimento=obj.datanascimento
+            this.cargo=obj.cargo
+        }
+    }
+
+    toString(){
+        const objeto=`{
+            "id":"${this.id}",
+            "nome":"${this.nome}",
+            "email":"${this.email}",
+            "senha":"${this.senha}",
+            "datanascimento":"${this.datanascimento}",
+            "cargo":"${this.cargo}",
+        }`
+        return objeto
+    }
+
+    toFirestore(){
+        const usuario={
+            id: this.id,
+            nome: this.nome,
+            email: this.email,
+            senha: this.senha,
+            datanascimento: this.datanascimento,
+            cargo: this.cargo
+        }
+        return usuario
+    }
+}
+/Pasta screens*/
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { firestore } from '../firebase';
+
+const CadastrarOferta = () => {
+  const [precoAtual, setPrecoAtual] = useState('');
+  const [precoOferta, setPrecoOferta] = useState('');
+  const [nomeProduto, setNomeProduto] = useState('');
+  const [descricaoProduto, setDescricaoProduto] = useState('');
+  const [IdProduto, setIdProduto] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [show, setShow] = useState(false);
+
+  const OfertasRef = firestore.collection('Ofertas');
+
+  const salvarOferta = async () => {
+    setIsSaving(true);
+    const oferta = {
+      precoAtual: parseFloat(precoAtual),
+      precoOferta: parseFloat(precoOferta),
+      nomeProduto,
+      descricaoProduto,
+      IdProduto,
+      dataValidade: date.toISOString().split('T')[0], // Salvando a data no formato YYYY-MM-DD
+    };
+
+    try {
+      await OfertasRef.add(oferta);
+      alert('Oferta cadastrada com sucesso!');
+      limparFormulario();
+    } catch (error) {
+      console.error('Erro ao salvar oferta:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const limparFormulario = () => {
+    setPrecoAtual('');
+    setPrecoOferta('');
+    setNomeProduto('');
+    setDescricaoProduto('');
+    setIdProduto('');
+    setDate(new Date());
+  };
+
+  const onChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShow(Platform.OS === 'ios');
+    setDate(currentDate);
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.inputContainer}>
+        <TextInput
+          placeholder="Nome do produto"
+          value={nomeProduto}
+          onChangeText={setNomeProduto}
+          style={styles.input}
+          editable={!isSaving}
+        />
+
+        <TextInput
+          placeholder="Id do produto"
+          value={IdProduto}
+          onChangeText={setIdProduto}
+          style={styles.input}
+          editable={!isSaving}
+        />
+
+        <TextInput
+          placeholder="Preço atual do produto"
+          value={precoAtual}
+          onChangeText={setPrecoAtual}
+          style={styles.input}
+          keyboardType="numeric"
+          editable={!isSaving}
+        />
+        <TextInput
+          placeholder="Preço durante a oferta"
+          value={precoOferta}
+          onChangeText={setPrecoOferta}
+          style={styles.input}
+          keyboardType="numeric"
+          editable={!isSaving}
+        />
+
+        <TextInput
+          placeholder="Descrição do produto"
+          value={descricaoProduto}
+          onChangeText={setDescricaoProduto}
+          style={[styles.input, { height: 100 }]}
+          multiline
+          editable={!isSaving}
+        />
+
+        <TouchableOpacity onPress={() => setShow(true)} style={styles.dateButton}>
+          <Text style={styles.dateButtonText}>Selecionar Data de Validade da Oferta</Text>
+        </TouchableOpacity>
+        {show && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={onChange}
+          />
+        )}
+        <Text style={styles.selectedDateText}>Data Selecionada: {date.toISOString().split('T')[0]}</Text>
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: isSaving ? '#ccc' : '#006400' }]} // Alteração da cor para verde
+          onPress={salvarOferta}
+          disabled={isSaving}
+        >
+          <Text style={styles.buttonText}>{isSaving ? 'Salvando...' : 'Salvar Oferta'}</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#a9a9a9',
+  },
+  inputContainer: {
+    width: '80%',
+  },
+  input: {
+    backgroundColor: 'white',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+  buttonContainer: {
+    width: '60%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  button: {
+    width: '100%',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  dateButton: {
+    backgroundColor: '#006400',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  selectedDateText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: 'black',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});
+
+export default CadastrarOferta;
+/*-----*/
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Modal,
+  Button
+} from "react-native";
+
+const ColaboradorScreen = ({ navigation }) => {
+  const [editando, setEditando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [funcionario, setFuncionario] = useState({
+    nome: "João da Silva",
+    email: "a@gmail.com",
+    senha: "123456",
+    dataNascimento: "01/01/1990",
+    cargo: "Repositor",
+    setor: "bebidas"
+  });
+
+  const [suporteVisible, setSuporteVisible] = useState(false);
+
+  const handleEditar = () => {
+    setEditando(!editando);
+  };
+
+  const handleChangeText = (key: string, value: string) => {
+    setFuncionario({ ...funcionario, [key]: value });
+  };
+
+  const handleMostrarSenha = () => {
+    setMostrarSenha(!mostrarSenha);
+  };
+
+  const handleSuportePress = () => {
+    setSuporteVisible(true);
+  };
+
+  const handleCloseSuporte = () => {
+    setSuporteVisible(false);
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image
+            source={{
+              uri: "https://w7.pngwing.com/pngs/184/113/png-transparent-user-profile-computer-icons-profile-heroes-black-silhouette-thumbnail.png"
+            }}
+            style={styles.logo}
+          />
+          <Text style={styles.title}>{funcionario.nome}</Text>
+          {!editando ? (
+            <>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Email:</Text>
+                <Text style={styles.fieldValue}>{funcionario.email}</Text>
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Senha:</Text>
+                <Text style={styles.fieldValue}>{mostrarSenha ? funcionario.senha : "********"}</Text>
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Data de Nascimento:</Text>
+                <Text style={styles.fieldValue}>{funcionario.dataNascimento}</Text>
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Cargo:</Text>
+                <Text style={styles.fieldValue}>{funcionario.cargo}</Text>
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Setor:</Text>
+                <Text style={styles.fieldValue}>{funcionario.setor}</Text>
+              </View>
+              <TouchableOpacity onPress={handleEditar}>
+                <Text style={styles.editar}>Editar</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Email:</Text>
+                <TextInput
+                  style={styles.input}
+                  value={funcionario.email}
+                  onChangeText={(text) => handleChangeText("email", text)}
+                  placeholder="Email"
+                />
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Senha:</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    value={funcionario.senha}
+                    onChangeText={(text) => handleChangeText("senha", text)}
+                    placeholder="Senha"
+                    secureTextEntry={!mostrarSenha}
+                  />
+                  <TouchableOpacity onPress={handleMostrarSenha} style={styles.showPasswordIcon}>
+                    <Text style={styles.showPasswordText}>{mostrarSenha ? "Ocultar" : "Mostrar"}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Data de Nascimento:</Text>
+                <TextInput
+                  style={styles.input}
+                  value={funcionario.dataNascimento}
+                  onChangeText={(text) => handleChangeText("dataNascimento", text)}
+                  placeholder="Data de Nascimento"
+                />
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Cargo:</Text>
+                <TextInput
+                  style={styles.input}
+                  value={funcionario.cargo}
+                  onChangeText={(text) => handleChangeText("cargo", text)}
+                  placeholder="Cargo"
+                />
+              </View>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Setor:</Text>
+                <TextInput
+                  style={styles.input}
+                  value={funcionario.setor}
+                  onChangeText={(text) => handleChangeText("setor", text)}
+                  placeholder="Setor"
+                />
+              </View>
+              <TouchableOpacity onPress={handleEditar}>
+                <Text style={styles.salvar}>Salvar</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* Seção de Contato com o Suporte */}
+        <TouchableOpacity onPress={handleSuportePress} style={styles.section}>
+          <Text style={styles.sectionTitle}>Contate o Suporte:</Text>
+          <View style={[styles.option, { backgroundColor: "#d3d3d3" }]}>
+            <Text style={styles.optionTitle}>Suporte ao Usuário</Text>
+            <Text style={styles.optionDescription}>
+              Precisa de ajuda? Entre em contato conosco!
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Modal de Suporte */}
+        <Modal
+          visible={suporteVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={handleCloseSuporte}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Problemas Comuns e Soluções:</Text>
+              <Text style={styles.modalText}>
+                1. Problema: Incapaz de fazer login.
+              </Text>
+              <Text style={styles.modalText}>
+                Solução: Verifique se o email e a senha estão corretos e se há conexão com a internet.
+              </Text>
+              <Text style={styles.modalText}>
+                2. Problema: Aplicativo travando frequentemente.
+              </Text>
+              <Text style={styles.modalText}>
+                Solução: Tente reiniciar o aplicativo ou o dispositivo.
+              </Text>
+              <Text style={styles.modalText}>
+                3. Problema: Não é possível visualizar todas as ofertas disponíveis.
+              </Text>
+              <Text style={styles.modalText}>
+                Solução: Atualize o aplicativo para a versão mais recente disponível na loja de aplicativos.
+              </Text>
+              <Button title="Fechar" onPress={handleCloseSuporte} />
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#a9a9a9"
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 20
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    marginBottom: 10,
+    borderRadius: 100
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333"
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 5
+  },
+  editar: {
+    fontSize: 14,
+    color: "blue",
+    textDecorationLine: "underline"
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#999",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    width: "100%"
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  showPasswordIcon: {
+    marginLeft: 10
+  },
+  showPasswordText: {
+    color: "blue",
+    textDecorationLine: "underline"
+  },
+  field: {
+    flexDirection: "row",
+    marginBottom: 10,
+    alignItems: "center"
+  },
+  fieldLabel: {
+    width: "30%",
+    textAlign: "right",
+    marginRight: 10,
+    fontSize: 16,
+    fontWeight: "bold"
+  },
+  fieldValue: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#999",
+    borderRadius: 5,
+    padding: 10
+  },
+  salvar: {
+    fontSize: 14,
+    color: "green",
+    textDecorationLine: "underline",
+    marginTop: 10
+  },
+  section: {
+    marginTop: 20
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#333"
+  },
+  option: {
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: "#d3d3d3",
+    marginBottom: 10
+  },
+  optionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#333"
+  },
+  optionDescription: {
+    fontSize: 16,
+    color: "#333"
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)"
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#333"
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 5,
+    color: "#333"
+  }
+});
+
+export default ColaboradorScreen;
+/*----*/
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { auth, firestore } from '../firebase';
+import { useNavigation } from '@react-navigation/core';
+import React from 'react';
+
+const LoginScreen = () => {
+    const navigation = useNavigation();
+
+    const handleSignOut = () => {
+        auth
+            .signOut()
+            .then(() => {
+                navigation.replace('login');
+            })
+            .catch(error => alert(error.message));
+    };
+
+    return (
+        <View style={styles.container}>
+            {/* Seus componentes de tela de login aqui */}
+            <TouchableOpacity style={styles.loginButton} onPress={handleSignOut}>
+                <Text style={styles.loginButtonText}>Logout</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#ccc', // Alterado para cinza escuro
+    },
+    loginButton: {
+        backgroundColor: '#0782F9',
+        width: '60%',
+        padding: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    loginButtonText: {
+        color: 'white',
+        fontWeight: '700',
+        fontSize: 16,
+    },
+});
+
+export default LoginScreen;
+/*----*/
+import React, { useState, useEffect } from "react";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  View,
+  FlatList,
+  Text,
+  StyleSheet,
+  Button,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { firestore } from "../firebase";
+import { Ofertas } from "../model/Ofertas";
+import moment from "moment";
+
+const ListarOfertas = () => {
+  const [loading, setLoading] = useState(true);
+  const [ofertas, setOfertas] = useState<Ofertas[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [filteredOfertas, setFilteredOfertas] = useState<Ofertas[]>([]);
+  const ofertaRef = firestore.collection("Ofertas");
+
+  useEffect(() => {
+    const subscriber = ofertaRef.onSnapshot((querySnapshot) => {
+      const ofertasLista: Ofertas[] = [];
+      querySnapshot.forEach((documentSnapshot) => {
+        const data = documentSnapshot.data();
+        ofertasLista.push({
+          id: documentSnapshot.id,
+          idProduto: data.idProduto || "",
+          nomeProduto: data.nomeProduto || "",
+          descricaoProduto: data.descricaoProduto || "",
+          precoAtual: data.precoAtual || "",
+          precoOferta: data.precoOferta || "",
+          dataValidade: data.dataValidade || "",
+        });
+      });
+      setOfertas(ofertasLista);
+      setLoading(false);
+    });
+
+    return () => subscriber();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDate) {
+      const formattedSelectedDate = moment(selectedDate).format("YYYY-MM-DD");
+      const filtered = ofertas.filter((oferta) => {
+        const ofertaDate = moment(oferta.dataValidade, "YYYY-MM-DD").toDate();
+        return moment(ofertaDate).isSame(formattedSelectedDate, "day");
+      });
+      setFilteredOfertas(filtered);
+    }
+  }, [selectedDate, ofertas]);
+
+  const renderItem = ({ item }: { item: Ofertas }) => (
+    <View style={styles.item}>
+      <Text style={styles.title}>Id: {item.id}</Text>
+      <Text style={styles.title}>Nome: {item.nomeProduto}</Text>
+      <Text style={styles.title}>Descrição: {item.descricaoProduto}</Text>
+      <Text style={styles.title}>
+        Preço Atual: R$ {parseFloat(item.precoAtual).toFixed(2)}
+      </Text>
+      <Text style={styles.title}>
+        Preço Oferta: R$ {parseFloat(item.precoOferta).toFixed(2)}
+      </Text>
+      <Text style={styles.title}>
+        Data de Validade da Oferta: {item.dataValidade}
+      </Text>
+    </View>
+  );
+
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Button
+        title="Selecionar Data das Ofertas"
+        onPress={() => setShowDatePicker(true)}
+      />
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
+      {selectedDate && (
+        <>
+          <Text style={styles.title}>
+            Ofertas do dia {moment(selectedDate).format("DD/MM/YYYY")}
+          </Text>
+          <FlatList
+            data={filteredOfertas}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.containerlistar}
+            ListEmptyComponent={<Text>Não há ofertas para a data selecionada</Text>}
+          />
+        </>
+      )}
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F0F0F0",
+  },
+  containerlistar: {
+    backgroundColor: "#ccc",
+  },
+  item: {
+    backgroundColor: "#fff",
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "black",
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginVertical: 8,
+  },
+});
+
+export default ListarOfertas;
+/*----*/
+import React, { useState, useEffect } from "react";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  View,
+  FlatList,
+  Text,
+  StyleSheet,
+  Button,
+  TouchableOpacity,
+  Modal,
+  TextInput
+} from "react-native";
+import { firestore } from "../firebase";
+import { Produtos } from "../model/Produtos";
+
+const ListarProdutos = () => {
+  const [loading, setLoading] = useState(true); 
+  const [produtos, setProdutos] = useState<Produtos[]>([]); 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [nome, setNome] = useState('');
+  const [peso, setPeso] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [datadeentrada, setDatadeentrada] = useState('');
+  const [tipo, setTipo] = useState('');
+  const produtoRef = firestore.collection("Produtos");
+
+  useEffect(() => {
+    const subscriber = produtoRef.onSnapshot((querySnapshot) => {
+      const produtosLista = [];
+      querySnapshot.forEach((documentSnapshot) => {
+        produtosLista.push({
+          ...documentSnapshot.data(),
+          id: documentSnapshot.id,
+        });
+      });
+      setProdutos(produtosLista);
+      setLoading(false);
+    });
+
+    return () => subscriber();
+  }, []);
+
+  const handleEdit = (item) => {
+    setSelectedProduct(item);
+    setNome(item.nome);
+    setPeso(item.peso);
+    setQuantidade(item.quantidade);
+    setDescricao(item.descricao);
+    setDatadeentrada(item.datadeentrada);
+    setTipo(item.tipo);
+    setModalVisible(true);
+  };
+
+  const handleSave = () => {
+    produtoRef.doc(selectedProduct.id).update({
+      nome,
+      peso,
+      quantidade,
+      descricao,
+      datadeentrada,
+      tipo
+    }).then(() => {
+      console.log("Produto atualizado com sucesso!");
+      setModalVisible(false);
+      setSelectedProduct(null);
+    }).catch((error) => {
+      console.error("Erro ao atualizar produto: ", error);
+    });
+  };
+
+  const handleDelete = (id) => {
+    produtoRef.doc(id).delete().then(() => {
+      console.log("Produto deletado com sucesso!");
+    }).catch((error) => {
+      console.error("Erro ao deletar produto: ", error);
+    });
+  };
+
+  if (loading) {
+    return <ActivityIndicator />;
+  }
+
+  const Item = ({ item }) => (
+    <View style={[styles.item, styles.produtoContainer]}>
+      <Text style={styles.title}>Nome : {item.nome}</Text>
+      <Text style={styles.title}>Peso : {item.peso}</Text>
+      <Text style={styles.title}>Quantidade : {item.quantidade}</Text>
+      <Text style={styles.title}>Descricao : {item.descricao}</Text>
+      <Text style={styles.title}>Data de Entrada : {item.datadeentrada}</Text>
+      <Text style={styles.title}>Tipo : {item.tipo}</Text>
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Editar"
+          onPress={() => handleEdit(item)}
+        />
+        <Button
+          title="Excluir"
+          onPress={() => handleDelete(item.id)}
+          color="red"
+        />
+      </View>
+    </View>
+  );
+
+  const renderItem = ({ item }) => {
+    if (item.quantidade > 0) {
+      return (
+        <Item item={item} />
+      );
+    } else {
+      return null; // Não renderiza o item se a quantidade for 0 ou menor
+    }
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, styles.containerlistar]}>
+      <FlatList
+        data={produtos}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+      />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Editar Produto</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={setNome}
+            value={nome}
+            placeholder="Nome"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setPeso}
+            value={peso}
+            placeholder="Peso"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setQuantidade}
+            value={quantidade}
+            placeholder="Quantidade"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setDescricao}
+            value={descricao}
+            placeholder="Descrição"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setDatadeentrada}
+            value={datadeentrada}
+            placeholder="Data de Entrada"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setTipo}
+            value={tipo}
+            placeholder="Tipo"
+          />
+          <View style={styles.modalButtonContainer}>
+            <Button
+              title="Salvar"
+              onPress={handleSave}
+            />
+            <Button
+              title="Cancelar"
+              onPress={() => setModalVisible(false)}
+              color="red"
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+  },
+  containerlistar: {
+    backgroundColor: '#ccc',
+  },
+  item: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+  title: {
+    fontSize: 16,
+  },
+  produtoContainer: {
+    borderWidth: 1,
+    borderColor: 'black',
+    padding: 10,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold"
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
+    width: '80%'
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%'
+  }
+});
+
+export default ListarProdutos;
+/*----*/
+import { useNavigation } from '@react-navigation/core';
+import React, { useEffect, useState } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth } from '../firebase';
+import Icon from 'react-native-vector-icons/FontAwesome';
+
+const LoginScreen = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [senhaIncorreta, setSenhaIncorreta] = useState(false);
+    const [mostrarSenha, setMostrarSenha] = useState(false); // Estado para controlar a exibição da senha
+
+    const navigation = useNavigation();
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                navigation.replace('Menu');
+            }
+        });
+
+        return unsubscribe;
+    }, []);
+
+    const irParaRegistro = () => {
+        navigation.navigate('Registro');
+    };
+
+    const handleLogin = () => {
+        auth
+            .signInWithEmailAndPassword(email, password)
+            .then(userCredentials => {
+                const user = userCredentials.user;
+                console.log('Logged in with:', user.email);
+                setSenhaIncorreta(false);
+            })
+            .catch(error => {
+                setSenhaIncorreta(true);
+                setPassword('');
+                console.error('Erro ao fazer login:', error.message);
+            });
+    };
+
+    const toggleMostrarSenha = () => {
+        setMostrarSenha(!mostrarSenha);
+    };
+
+    return (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+            keyboardVerticalOffset={Platform.select({ ios: 0, android: -500 })} // Valor negativo para compensar o espaço ocupado pelo teclado
+        >
+            <Text style={styles.title}>Seu estoque melhor</Text>
+            <View style={styles.inputContainer}>
+                <TextInput
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={text => setEmail(text)}
+                    style={styles.input}
+                />
+                <View style={[styles.input, styles.passwordInput]}>
+                    <TextInput
+                        placeholder="Senha"
+                        value={password}
+                        onChangeText={text => setPassword(text)}
+                        style={{ flex: 1 }}
+                        secureTextEntry={!mostrarSenha}
+                    />
+                    <TouchableOpacity onPress={toggleMostrarSenha}>
+                        <Icon name={mostrarSenha ? 'eye-slash' : 'eye'} size={20} color="black" />
+                    </TouchableOpacity>
+                </View>
+                {senhaIncorreta && (
+                    <Text style={styles.errorMessage}>Senha incorreta. Tente novamente.</Text>
+                )}
+            </View>
+
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                    onPress={handleLogin}
+                    style={[styles.button, styles.greenButton]}>
+                    <Text style={styles.buttonText}>Entrar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={irParaRegistro}
+                    style={[styles.button, styles.buttonOutline]}>
+                    <Text style={styles.buttonOutlineText}>Registrar</Text>
+                </TouchableOpacity>
+            </View>
+        </KeyboardAvoidingView>
+    );
+};
+
+export default LoginScreen;
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#a9a9a9',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
+    inputContainer: {
+        width: '80%',
+    },
+    input: {
+        backgroundColor: 'white',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        borderRadius: 10,
+        marginTop: 5,
+    },
+    passwordInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    buttonContainer: {
+        width: '60%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 40,
+    },
+    button: {
+        width: '100%',
+        padding: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    greenButton: {
+        backgroundColor: '#006400',
+        marginBottom: 10,
+    },
+    buttonOutline: {
+        backgroundColor: 'white',
+        borderColor: '#0782F9',
+        borderWidth: 2,
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: '700',
+        fontSize: 16,
+    },
+    buttonOutlineText: {
+        color: '#0782F9',
+        fontWeight: '700',
+        fontSize: 16,
+    },
+    errorMessage: {
+        color: 'red',
+        marginTop: 5,
+    },
+});
+/*----*/
+/*----*/
+import { useNavigation } from '@react-navigation/core';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, firestore } from '../firebase';
+import { Produtos } from '../model/Produtos';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+
+const ManterProdutos = () => {
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [tipoSelecionado, setTipoSelecionado] = useState('');
+  const [pesoSelecionado, setPesoSelecionado] = useState('Quilos');
+  const [formProdutos, setFormProdutos] = useState<Partial<Produtos>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const ProdutosRef = firestore.collection('Produtos');
+  const navigation = useNavigation();
+
+  useEffect(() => {
+
+  }, []);
+ 
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (date: { getDate: () => { (): any; new(): any; toString: { (): string; new(): any; }; }; getMonth: () => number; getFullYear: () => string; }) => {
+    console.warn("A date has been picked: ", date);
+    const formattedDate =date.getDate().toString().padStart(2, "0") + "/" + ((date.getMonth()+1).toString().padStart(2, "0")) + "/" + date.getFullYear();
+    console.log(formattedDate)
+    setFormProdutos({ ...formProdutos, datadeentrada: formattedDate })
+    hideDatePicker();
+  };
+
+  const limparFormulario = () => {
+    setIsSaving(false);
+    setFormProdutos({});
+  };
+
+  const cancelar = async () => {
+    limparFormulario();
+  }
+
+  const salvar = async () => {
+    setIsSaving(true); 
+    const produtosRefComId = ProdutosRef.doc();
+    const produtos = new Produtos(formProdutos);
+    produtos.id = produtosRefComId.id;
+    produtos.tipo = tipoSelecionado; 
+    // Adicionando a opção de peso junto com o peso
+    produtos.peso = `${formProdutos.peso} ${pesoSelecionado}`;
+
+    // Definindo emFalta como true se quantidade for zero
+    produtos.emFalta = parseInt(formProdutos.quantidade) === 0;
+
+    console.log(produtos)
+    produtosRefComId.set(produtos.toFirestore()).then(() => {
+      alert("Produtos " + produtos.nome + " Adicionado com Sucesso");
+      console.log("Produtos " + produtos);
+      console.log("Produtos ToString: " + produtos.toString())
+      limparFormulario();
+    }).catch(error => {
+      console.error('Erro ao salvar produtos:', error);
+    }).finally(() => {
+      setIsSaving(false); 
+    });
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.inputContainer}>
+          
+        <TextInput
+            placeholder="ID"
+            value={formProdutos.id}
+            onChangeText={val => setFormProdutos({ ...formProdutos, id: val })}
+            style={styles.input}
+            editable={!isSaving} 
+        />
+        
+        <TextInput
+            placeholder="Nome"
+            value={formProdutos.nome}
+            onChangeText={val => setFormProdutos({ ...formProdutos, nome: val })}
+            style={styles.input}
+            editable={!isSaving} 
+        />
+        
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={[styles.inputLabel, { color: 'black' }]}>Tipo:</Text>
+          <TouchableOpacity onPress={() => setTipoSelecionado('Perecível')} style={[styles.sliceButton, { backgroundColor: tipoSelecionado === 'Perecível' ? '#7fff00' : 'gray' }]}>
+              <Text style={[styles.buttonText, { color: 'black' }]}>Perecível</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setTipoSelecionado('Não Perecível')} style={[styles.sliceButton, { backgroundColor: tipoSelecionado === 'Não Perecível' ? '#7fff00' : 'gray' }]}>
+              <Text style={[styles.buttonText, { color: 'black' }]}>Não Perecível</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={[styles.inputLabel, { color: 'black' }]}>Peso:</Text>
+            <TextInput
+                placeholder="Peso"
+                value={formProdutos.peso?.toString()}
+                onChangeText={val => setFormProdutos({ ...formProdutos, peso: val })}
+                style={styles.input}
+                editable={!isSaving}
+            />
+            <TouchableOpacity onPress={() => setPesoSelecionado('Quilos')} style={[styles.sliceButton, { backgroundColor: pesoSelecionado === 'Quilos' ? '#7fff00' : 'gray' }]}>
+                <Text style={[styles.buttonText, { color: 'black' }]}>Quilos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setPesoSelecionado('Gramas')} style={[styles.sliceButton, { backgroundColor: pesoSelecionado === 'Gramas' ? '#7fff00' : 'gray' }]}>
+                <Text style={[styles.buttonText, { color: 'black' }]}>Gramas</Text>
+            </TouchableOpacity>
+        </View>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={[styles.inputLabel, { color: 'black' }]}>Peso:</Text>
+            <TextInput
+                
+      
+            />
+            <TouchableOpacity onPress={() => setPesoSelecionado('Litros')} style={[styles.sliceButton, { backgroundColor: pesoSelecionado === 'Litros' ? '#7fff00' : 'gray' }]}>
+                <Text style={[styles.buttonText, { color: 'black' }]}>Litros</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setPesoSelecionado('Mililitros')} style={[styles.sliceButton, { backgroundColor: pesoSelecionado === 'Mililitros' ? '#7fff00' : 'gray' }]}>
+                <Text style={[styles.buttonText, { color: 'black' }]}>Mililitros</Text>
+            </TouchableOpacity>
+        </View>
+
+        <TextInput
+            placeholder="Quantidade"
+            value={formProdutos.quantidade}
+            onChangeText={val => setFormProdutos({ ...formProdutos, quantidade: val })}
+            style={styles.input}
+            editable={!isSaving}
+        />
+        <TextInput
+          placeholder="Descrição"
+          value={formProdutos.descricao}
+          onChangeText={(val) =>
+            setFormProdutos({ ...formProdutos, descricao: val })
+          }
+          style={styles.input}
+          editable={!isSaving}
+        />
+        
+        <Text>Data de entrada: {formProdutos.datadeentrada}</Text>
+        <Button title="Adicionar Data" onPress={showDatePicker} />
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+          textConfirm="Adicionar Data"
+        />
+      </View>
+    
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={cancelar} style={[styles.button, { backgroundColor: 'red' }]}>
+          <Text style={styles.buttonText}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={salvar}
+          style={[styles.button, styles.buttonOutline, { backgroundColor: 'green' }]}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <ActivityIndicator color="white" />
+              <Text style={{ marginLeft: 5 }}>Aguarde ...</Text>
+            </View>
+          ) : (
+            <Text style={styles.buttonOutlineText}>Salvar</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#a9a9a9',
+  },
+  inputContainer: {
+    width: '80%',
+  },
+  input: {
+    backgroundColor: 'white',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+  buttonContainer: {
+    width: '60%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  button: {
+    width: '100%',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  buttonOutline: {
+    backgroundColor: 'white',
+    borderColor: '#0782F9',
+    borderWidth: 2,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  buttonOutlineText: {
+    color: '#0782F9',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  sliceButton: {
+    padding: 10,
+    borderRadius: 20,
+    marginLeft: 10,
+  },
+});
+
+export default ManterProdutos;
+/*------*/
+import * as React from 'react';
+import { Button, Text, View } from 'react-native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { NavigationContainer } from '@react-navigation/native';
+import ManterProdutos from './ManterProdutos';
+import ListarProdutos from './ListarProdutos';
+import ProdutosEmFalta from './ProdutosEmFalta';
+import Colaborador from './Colaborador';
+import CadastrarOferta from './CadastrarOferta';
+import ListarOferta from './ListarOfertas';
+
+
+function ListarScreen({ navigation }) {
+  return (
+   <ListarProdutos></ListarProdutos>
+  );
+}
+function ManterScreen({ navigation }) {
+  return (
+   <ManterProdutos></ManterProdutos>
+  );
+}
+
+function ProdutosEmFaltaScreen({ navigation }) {
+  return (
+   <ProdutosEmFalta></ProdutosEmFalta>
+  );
+}
+
+function ColaboradorScreen({ navigation }) {
+  return (
+   <Colaborador></Colaborador>
+  );
+}
+
+function CadastrarOfertaScreen({ navigation }) {
+  return (
+   <CadastrarOferta></CadastrarOferta>
+  );
+}
+
+function ListarOfertaScreen({ navigation }) {
+  return (
+   <ListarOferta></ListarOferta>
+  );
+}
+
+
+const Drawer = createDrawerNavigator();
+
+export default function Menu() {
+  return (
+    
+      <Drawer.Navigator initialRouteName="">
+        <Drawer.Screen name="Adicionar Produto" component={ManterScreen} />
+        <Drawer.Screen name="Produtos em Estoque" component={ListarScreen} />
+        <Drawer.Screen name="Produtos em falta" component={ProdutosEmFaltaScreen} />
+        <Drawer.Screen name="Registro de Ofertas" component={CadastrarOfertaScreen} />
+        <Drawer.Screen name="Ofertas Atuais" component={ListarOfertaScreen} />
+        <Drawer.Screen name="Funcionário" component={ColaboradorScreen} />
+        
+      </Drawer.Navigator>
+    
+  );
+}
+/*------*/
+import React, { useState, useEffect } from "react";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  View,
+  FlatList,
+  Text,
+  StyleSheet,
+  Button,
+  Modal,
+  TextInput
+} from "react-native";
+import { firestore } from "../firebase";
+import { Produtos } from "../model/Produtos";
+
+const ProdutosEmFalta = () => {
+  const [loading, setLoading] = useState(true); 
+  const [produtos, setProdutos] = useState<Produtos[]>([]); 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [nome, setNome] = useState('');
+  const [peso, setPeso] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [datadeentrada, setDatadeentrada] = useState('');
+  const [tipo, setTipo] = useState('');
+  const produtoRef = firestore.collection("Produtos");
+
+  useEffect(() => {
+    const subscriber = produtoRef.onSnapshot((querySnapshot) => {
+      const produtosLista: ((prevState: Produtos[]) => Produtos[]) | { id: string; }[] = [];
+      querySnapshot.forEach((documentSnapshot) => {
+        produtosLista.push({
+          ...documentSnapshot.data(),
+          id: documentSnapshot.id,
+        });
+      });
+      setProdutos(produtosLista);
+      setLoading(false);
+    });
+
+    return () => subscriber();
+  }, []);
+
+  const handleEdit = (item) => {
+    setSelectedProduct(item);
+    setNome(item.nome);
+    setPeso(item.peso);
+    setQuantidade(item.quantidade);
+    setDescricao(item.descricao);
+    setDatadeentrada(item.datadeentrada);
+    setTipo(item.tipo);
+    setModalVisible(true);
+  };
+
+  const handleSave = () => {
+    produtoRef.doc(selectedProduct.id).update({
+      nome,
+      peso,
+      quantidade,
+      descricao,
+      datadeentrada,
+      tipo
+    }).then(() => {
+      console.log("Produto atualizado com sucesso!");
+      setModalVisible(false);
+      setSelectedProduct(null);
+    }).catch((error) => {
+      console.error("Erro ao atualizar produto: ", error);
+    });
+  };
+
+  const handleDelete = (id) => {
+    produtoRef.doc(id).delete().then(() => {
+      console.log("Produto deletado com sucesso!");
+    }).catch((error) => {
+      console.error("Erro ao deletar produto: ", error);
+    });
+  };
+
+  if (loading) {
+    return <ActivityIndicator />;
+  }
+
+  const Item = ({ item }) => (
+    <View style={[styles.item, styles.produtoContainer, 
+      item.quantidade === 0 ? styles.produtoZero : item.quantidade < 0 ? styles.produtoNegativo : null]}>
+      <Text style={styles.title}>Nome : {item.nome}</Text>
+      <Text style={styles.title}>Peso : {item.peso}</Text>
+      <Text style={styles.title}>Quantidade : {item.quantidade}</Text>
+      <Text style={styles.title}>Descricao : {item.descricao}</Text>
+      <Text style={styles.title}>Data de Entrada : {item.datadeentrada}</Text>
+      <Text style={styles.title}>Tipo : {item.tipo}</Text>
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Editar"
+          onPress={() => handleEdit(item)}
+        />
+        <Button
+          title="Excluir"
+          onPress={() => handleDelete(item.id)}
+          color="red"
+        />
+      </View>
+    </View>
+  );
+
+  const renderItem = ({ item }) => {
+    if (item.quantidade < 1) {
+      return (
+        <Item item={item} />
+      );
+    } else {
+      return null; // Não renderiza o item se a quantidade for maior que 1
+    }
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, styles.containerlistar]}>
+      <FlatList
+        data={produtos}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+      />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Editar Produto</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={setNome}
+            value={nome}
+            placeholder="Nome"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setPeso}
+            value={peso}
+            placeholder="Peso"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setQuantidade}
+            value={quantidade}
+            placeholder="Quantidade"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setDescricao}
+            value={descricao}
+            placeholder="Descrição"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setDatadeentrada}
+            value={datadeentrada}
+            placeholder="Data de Entrada"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setTipo}
+            value={tipo}
+            placeholder="Tipo"
+          />
+          <View style={styles.modalButtonContainer}>
+            <Button
+              title="Salvar"
+              onPress={handleSave}
+            />
+            <Button
+              title="Cancelar"
+              onPress={() => setModalVisible(false)}
+              color="red"
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0', // Alterado para cinza claro
+  },
+  containerlistar: {
+    backgroundColor: '#ccc', // Fundo cinza
+  },
+  item: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+  title: {
+    fontSize: 16,
+    color: '#000', // Cor do texto preto
+  },
+  produtoContainer: {
+    borderWidth: 1,
+    borderColor: 'black', // Borda preta
+    padding: 10,
+    marginBottom: 10,
+  },
+  produtoZero: {
+    backgroundColor: '#7CFC00', // Verde mais claro e visível
+  },
+  produtoNegativo: {
+    backgroundColor: '#ff7f7f', // Vermelho mais claro
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "bold"
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
+    width: '80%'
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%'
+  }
+});
+
+export default ProdutosEmFalta;
+/*-----*/
+import { useNavigation } from '@react-navigation/core';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, firestore } from '../firebase';
+import { Usuario } from '../model/Usuario';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+
+const Registro = () => {
+  const [formUsuario, setFormUsuario] = useState<Partial<Usuario>>({})
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [senhaDiferente, setSenhaDiferente] = useState(false)
+  const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false)
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const refUsuario = firestore.collection("Usuario")
+  const navigation = useNavigation()
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        navigation.replace("Menu")
+      }
+    })
+
+    return unsubscribe
+  }, [])
+
+  const criarRegistro = () => {
+    if (formUsuario.senha === confirmarSenha) {
+      setSenhaDiferente(false)
+      auth
+        .createUserWithEmailAndPassword(formUsuario.email, formUsuario.senha)
+        .then(userCredentials => {
+          const user = userCredentials.user;
+          const refComIdUsuario = refUsuario.doc(auth.currentUser.uid);
+
+          refComIdUsuario.set({
+            id: auth.currentUser.uid,
+            nome: formUsuario.nome,
+            email: formUsuario.email,
+            cargo: formUsuario.cargo,
+            datanascimento: formUsuario.datanascimento
+          })
+
+          console.log('Registered with:', user.email);
+        })
+        .catch(error => alert(error.message))
+    } else {
+      setSenhaDiferente(true)
+    }
+  }
+
+  const cancelar = () => {
+    navigation.replace("Login")
+  }
+
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (date) => {
+    console.warn("A date has been picked: ", date);
+    const formattedDate = date.getDate().toString().padStart(2, "0") + "/" + ((date.getMonth() + 1).toString().padStart(2, "0")) + "/" + date.getFullYear();
+    console.log(formattedDate)
+    setFormUsuario({ ...formUsuario, datanascimento: formattedDate });
+    hideDatePicker();
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.inputContainer}>
+        <TextInput
+          placeholder="Nome"
+          value={formUsuario.nome}
+          onChangeText={nome => setFormUsuario({ ...formUsuario, nome: nome })}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Cargo"
+          value={formUsuario.cargo}
+          onChangeText={cargo => setFormUsuario({ ...formUsuario, cargo: cargo })}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Email"
+          value={formUsuario.email}
+          onChangeText={email => setFormUsuario({ ...formUsuario, email: email })}
+          style={styles.input}
+        />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            placeholder="Senha"
+            value={formUsuario.senha}
+            onChangeText={senha => setFormUsuario({ ...formUsuario, senha: senha })}
+            secureTextEntry={!mostrarSenha}
+            style={[styles.input, styles.passwordInput]}
+          />
+          <TouchableOpacity
+            onPress={() => setMostrarSenha(!mostrarSenha)}
+            style={styles.eyeButton}
+          >
+            <Ionicons name={mostrarSenha ? 'eye-off' : 'eye'} size={24} color="black" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            placeholder="Confirmar Senha"
+            value={confirmarSenha}
+            onChangeText={senha => setConfirmarSenha(senha)}
+            secureTextEntry={!mostrarConfirmarSenha}
+            style={[styles.input, styles.passwordInput]}
+          />
+          <TouchableOpacity
+            onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+            style={styles.eyeButton}
+          >
+            <Ionicons name={mostrarConfirmarSenha ? 'eye-off' : 'eye'} size={24} color="black" />
+          </TouchableOpacity>
+        </View>
+        {senhaDiferente && <Text style={styles.errorMessage}>As senhas são diferentes</Text>}
+        <TouchableOpacity onPress={showDatePicker} style={styles.input}>
+          <Text>Data de Nascimento: {formUsuario.datanascimento}</Text>
+        </TouchableOpacity>
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+          textConfirm="Selecionar"
+        />
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          onPress={criarRegistro}
+          style={[styles.button, { backgroundColor: '#006400' }]}
+        >
+          <Text style={styles.buttonText}>Registrar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={cancelar}
+          style={[styles.button, styles.buttonOutline]}
+        >
+          <Text style={styles.buttonOutlineText}>Cancelar</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  )
+}
+
+export default Registro
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#d3d3d3',
+  },
+  inputContainer: {
+    width: '80%',
+    alignItems: 'center',
+  },
+  input: {
+    backgroundColor: 'white',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 5,
+    width: '100%',
+  },
+  passwordInputContainer: {
+    position: 'relative',
+    width: '100%',
+  },
+  passwordInput: {
+    paddingRight: 40,
+  },
+  eyeButton: {
+    position: 'absolute',
+    top: 15,
+    right: 10,
+  },
+  buttonContainer: {
+    width: '60%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  button: {
+    backgroundColor: '#0782F9',
+    width: '100%',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  buttonOutline: {
+    backgroundColor: 'white',
+    marginTop: 5,
+    borderColor: '#0782F9',
+    borderWidth: 2,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  buttonOutlineText: {
+    color: '#0782F9',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  errorMessage: {
+    color: 'red',
+    marginTop: 5,
+  }
+})
+/*Arquivos principais*/
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import LoginScreen from './screens/LoginScreen';
+import HomeScreen from './screens/HomeScreen';
+import Registro from './screens/Registro';
+import Menu from './screens/Menu';
+
+
+const Stack = createNativeStackNavigator();
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen options={{ headerShown: false }} name="Login" component={LoginScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Registro" component={Registro} />
+        <Stack.Screen options={{ headerShown: false }} name="Menu" component={Menu} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+/*--JS---*/
+// Import the functions you need from the SDKs you need
+//import * as firebase from "firebase
+//import * as firebase from "firebase/app";
+import firebase from "firebase/compat/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// cada produto do firebase deve ser importad separadamente
+//por exemplo auth de autenticação
+import "firebase/compat/auth";
+
+import "firebase/compat/firestore";
+
+// Your web app's Firebase configuration
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQ8v_uQoTbGb2AGMOi-g_xyDOdSm0gZ6I",
+  authDomain: "meu-estoque-melhor-606fe.firebaseapp.com",
+  projectId: "meu-estoque-melhor-606fe",
+  storageBucket: "meu-estoque-melhor-606fe.appspot.com",
+  messagingSenderId: "610562951264",
+  appId: "1:610562951264:web:66caa4a9bbc509c4d29b05"
+};
+
+// Initialize Firebase
+let app;
+if (firebase.apps.length === 0) {
+  app = firebase.initializeApp(firebaseConfig);
+} else {
+  app = firebase.app();
+}
+
+const auth = firebase.auth();
+const firestore = firebase.firestore();
+export { auth, firestore };
+/*-----*/
+import { StyleSheet, StatusBar } from "react-native";
+export default StyleSheet.create({
+  container: {
+    flex: 1,
+    //   justifyContent: 'center',
+    alignItems: "center",
+    marginTop: StatusBar.currentHeight || 0,
+  },
+  inputContainer: {
+    width: "80%",
+  },
+  input: {
+    backgroundColor: "white",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+  buttonContainer: {
+    width: "60%",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 40,
+  },
+  button: {
+    backgroundColor: "#0782F9",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonOutline: {
+    backgroundColor: "white",
+    marginTop: 5,
+    borderColor: "#0782F9",
+    borderWidth: 2,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  buttonOutlineText: {
+    color: "#0782F9",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+
+  //ESTILO DO LISTAR
+  containerlistar: {
+    flex: 1,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    marginTop: StatusBar.currentHeight || 0,
+  },
+  item: {
+    backgroundColor: "white",
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderColor: "#0782F9",
+    borderWidth: 2,
+    borderRadius: 10,
+  },
+  title: {
+    fontSize: 16,
+    color: "#0782F9",
+    fontWeight: "700",
+  },
+
+  // ESTILO DA LISTAGEM COM FILTRO
+  containerlistarcomfiltro: {
+    paddingTop: 40,
+    backgroundColor: "white",
+  },
+
+  itemStyle: {
+    backgroundColor: "#0066CC",
+    padding: 10,
+    marginVertical: 8,
+    marginHorizontal: 10,
+    color: "white",
+  },
+  textInputStyle: {
+    height: 40,
+    borderWidth: 1,
+    paddingLeft: 20,
+    margin: 5,
+    borderColor: "#0066CC",
+  },
+
+  // estilo data pikker
+  pickedDateContainer: {
+    padding: 10,
+    backgroundColor: "#eee",
+    borderRadius: 10,
+  },
+  pickedDate: {
+    alignItems: "center",
+    fontSize: 16,
+    color: "black",
+  },
+  btnContainer: {
+    padding: 10,
+  },
+  // This only works on iOS
+  datePicker: {
+    width: 320,
+    height: 260,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+
+  // novoconteirnerData
+  dataConteirner: {
+    flex: 1,
+    justifyContent: "space-between",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconePicker: {
+    backgroundColor: "green",
+    height: 10,
+    width: 150,
+  },
+  TextoPiker: {
+    backgroundColor: "blue",
+    height: 100,
+    flex: 1,
+  },
+
+  conteinerRelatorio: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    margin: "1%",
+    alignItems: "center",
+    alignContent: "space-between",
+  },
+
+  // modal
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 25,
+  },
+  modalView: {
+    margin: 5,
+    backgroundColor: "white",
+    borderRadius: 40,
+    padding: 100,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonModal: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonOpen: {
+    backgroundColor: "#F194FF",
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+  },
+});
+
